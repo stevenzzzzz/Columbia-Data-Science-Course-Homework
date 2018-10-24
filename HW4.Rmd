@@ -1,0 +1,152 @@
+---
+title: "HW4"
+author: "Ming Zhong mz2692"
+date: "10/20/2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+```{r}
+library("plyr")
+debt <- read.csv("/Users/zhongming/Downloads/debt.csv", as.is = TRUE)
+dim(debt)
+head(debt)
+```
+
+#1.
+```{r}
+#Construct the function
+mean.growth<-function(df){
+  return(mean(df$growth))
+}
+#Using daply to get the average growth of different country
+growth.country=daply(debt,.(Country),mean.growth)
+#Print the value
+round(c(growth.country["Australia"],growth.country["Netherlands"]),digits=2)
+```
+
+#2.
+```{r}
+#get the yearly average growth rate
+growth.year=daply(debt,.(Year),mean.growth)
+#print out the targeted yearly growth rate
+round(c(growth.year["1972"],growth.year["1989"]),digits=2)
+#plot the yearly growth rate
+plot(names(growth.year),growth.year,xlab="Year",ylab="GDP Growth Rate(%)")
+```
+
+#3.
+```{r}
+#get the correlation between growth rate and ratio
+round(cor(debt$growth,debt$ratio),digits = 4)
+corr<-function(df){return(round(cor(df$growth,df$ratio),digits = 4))}
+#compute correatlion for each country
+corr.country=daply(debt,.(Country),corr)
+#plot histogram
+hist(breaks=10,corr.country,xlab="correlation coefficient",main="Country")
+#compute correlation for each year
+corr.year=daply(debt,.(Year),corr)
+#plot histogram
+hist(breaks=10,corr.year,xlab="correlation coefficient",main="Year")
+#mean of correlation,which is around −0.1906
+round(mean(corr.year),digits=5)
+```
+
+Are there any countries or years where the correlation goes against the general trend?\newline
+```{r}
+plot(corr.country,xlab="Country",ylab="correlation coefficients",xaxt = "n")
+axis(side=1,at=1:20,labels=names(corr.country),las=2,cex.axis=0.5)
+plot(x=as.numeric(names(corr.year)),y=corr.year,xlab="year",ylab="correlation coefficients")
+```
+
+Ans: It seems that Norway is goes against the general trend and the correlation around 1980 also goes against the trend.\newline
+
+#4.
+```{r}
+#get the regreesino result
+summary(lm(data=debt,growth~ratio))
+debt=as.data.frame(debt)
+#plot debt ratio against debt growth
+plot(debt$ratio,debt$growth,xlab="debt ratio ",ylab="GDP growth")
+abline(lm(data=debt,growth~ratio),col="red")
+```
+
+#5.
+```{r}
+#print out the name of the the 4 countries
+country4=names(corr.country[corr.country<(-0.5)])
+#plot 4 graphs in one figure
+par(mfrow=c(2,2))
+for (this.country in country4){
+  country.dat<-subset(debt,Country==this.country)
+  with(data=country.dat,plot(ratio,growth,main=this.country))
+}
+```
+
+#6.
+```{r}
+#a.create new data frame
+debt.France=subset(debt,Country=="France")
+dim(debt.France)
+year=debt.France$Year+1
+#b.create new column
+next.growth=rep(1,54)
+for(i in 1:54){
+  if(year[i] %in% debt.France$Year){
+    next.growth[i]=debt.France[debt.France$Year==year[i],3]
+  }
+  else{
+    next.growth[i]=NA
+  }
+}
+debt.france=cbind(debt.France,next.growth)
+#print out to test
+round(debt.france[debt.france$Year==1971|debt.france$Year==1972,5],digits=3)
+```
+
+#7.
+```{r}
+#encapsulate question 6 into function
+func<-function(df){
+  y=df$Year+1
+  next.growth=rep(NA,nrow(df))
+  for(i in 1:nrow(df)){
+    if(y[i] %in% df$Year){
+      next.growth[i]=df[df$Year==y[i],3]
+    }
+    else{
+      next.growth[i]=NA
+    }
+  }
+  return(cbind(df,next.growth))
+}
+#get the data frame
+df=ddply(debt,.(Country),func)
+#doube check the France 2009 is NA
+df[df$Country=="France"&df$Year==2009,"next.growth"]
+```
+
+#8.
+```{r}
+#plot next year’s GDP growth against this year’s debt ratio
+plot(df$ratio,df$next.growth,xlab="next year GDP growth",ylab="Debt ratio")
+#Linearly regress next year’s growth rate on the current year’s debt ratio
+summary(lm(df$next.growth~df$ratio))
+#d add the line to the plot
+abline(lm(df$next.growth~df$ratio),col="red")
+```
+
+Ans:The regreesion result compared to the regression of the current year’s growth on the current year’s debt ratio is even worse. The R square of this result is smaller than the previous.\newline
+
+#9.
+```{r}
+#plot of next year’s GDP growth against the current year’s GDP growth
+with(data=df,plot(growth,next.growth))
+#Linearly regress next year’s growth on this year’s growth
+summary(lm(df$next.growth~df$growth))
+#add the line to the plot
+abline(lm(df$next.growth~df$growth),col="red")
+```
+
+Ans:The current growth is a better predictor.\newline

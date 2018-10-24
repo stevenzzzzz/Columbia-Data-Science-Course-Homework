@@ -1,0 +1,109 @@
+---
+title: "HW2_mz2692 GR5206"
+author: "Steven"
+date: "9/25/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+#Part 1: Loading and Cleaning the Data in R
+
+##i.  Load the data into a dataframe calledhousing.
+```{r}
+housing=as.data.frame(read.csv("/Users/zhongming/Downloads/NYChousing.csv"))
+```
+##ii.  How many rows and columns does the dataframe have?
+```{r}
+dim(housing)
+```
+There are 2506 rows and 22 columns.
+
+##iii.  Run this command, and explain, in words, what this does:
+```{r}
+apply(is.na(housing), 2, sum)
+```
+This code calculates the number of NAs in different columns.
+
+##iv.  Remove the rows of the dataset for which the variableValueis NA.
+```{r }
+housing=na.omit(housing)
+```
+
+##v.  How many rows did you remove with the previous call?  Does this agree with your resultfrom (iii)?
+```{r }
+2506-dim(housing)[1]
+```
+1876 rows have been removed. This agrees with the reuslt in (iii).
+
+##vi.  Create a new variable in the dataset calledlogValuethat is equal to the logarithm ofthe property’sValue.  What are the minimum, median, mean, and maximum values oflogValue?
+```{r}
+housing["logValue"]=log(housing["Value"])
+summary(housing["logValue"])
+```
+The minimum is 10.06, the median is 14.65, the mean is 14.65, the maximum is 20.22.
+
+##vii.  Create a new variable in the dataset calledlogUnitsthat is equal to the logarithm ofthe number of units in the property.  The number of units in each piece of property isstored in the variableUnitCount.
+```{r}
+housing["logUnits"]=log(housing["UnitCount"])
+```
+
+##viii.  Finally  create  a  new  variable  in  the  dataset  calledafter1950which  equalsTRUEifthe property was built in or after 1950 andFALSEotherwise.  You’ll want to use theYearBuiltvariable here.  This can be done in a single line of code.
+```{r}
+housing["after1950"]=housing["YearBuilt"]>=1950
+```
+
+#Part 2: EDA
+
+##i.  Plot propertylogValueagainst propertylogUnits.  Name the x and y labels of theplot appropriately.logValueshould be on the y-axis.
+```{r }
+with(housing,plot(x=logUnits,y=logValue,xlab="logUnits",ylab="logValue"))
+```
+
+##ii.  Make the same plot as above, but now include the argumentcol = factor(housing$after1950).Describe this plot and the covariation between the two variables. What does the coloringin the plot tell us?
+```{r}
+with(housing,plot(x=logUnits,xlab="logUnits",y=logValue,ylab="logValue",col= factor(housing$after1950)))
+legend("bottomright",legend=levels(factor(housing$after1950)),fill= unique(factor(housing$after1950)))
+```
+The plot can be approximate to a liner relationship, which shows that the covariance between logValue and log Units is positive. The coloring in the plot tell us that data of buidlings builted in or after 1950 are in read dots and data of buildiings builted before 1950 are in black dots.
+
+##iii.  Thecor()function calculates the correlation coefficient between two variables.  Whatis the correlation between propertylogValueand propertylogUnitsin (i) the wholedata, (ii) just Manhattan (iii) just Brooklyn (iv) for properties built after 1950 (v) forproperties built before 1950?
+```{r}
+#(i) the wholedata
+cor(data.frame(x=housing$logUnits,y=housing$logValue))
+#(ii) just Manhattan
+cor(data.frame(x=housing[housing$Borough=="Manhattan","logValue"],y=housing[housing$Borough=="Manhattan","logUnits"]))
+#(iii) just Brooklyn
+cor(data.frame(x=housing[housing$Borough=="Brooklyn","logValue"],y=housing[housing$Borough=="Brooklyn","logUnits"]))
+#(iv) for properties built after 1950 
+cor(data.frame(x=housing[housing$after1950==TRUE,"logValue"],y=housing[housing$after1950==TRUE,"logUnits"]))
+#(v) forproperties built before 1950
+cor(data.frame(x=housing[housing$after1950==F,"logValue"],y=housing[housing$after1950==F,"logUnits"]))
+```
+the correlation between propertylogValueand propertylogUnitsin 
+(i) the wholedata=0.7988655
+(ii) just Manhattan=0.8710823
+(iii) just Brooklyn=0.8053241
+(iv) for properties built after 1950=0.746731
+(v) forproperties built before 1950=0.7720285
+
+##iv.  Make a single plot showing propertylogValueagainst propertylogUnitsfor Manhat-tan and Brooklyn.  When creating this plot, clearly distinguish the two boroughs.
+```{r}
+df=data.frame(housing[housing$Borough==c("Brooklyn","Manhattan"),c("Borough","logValue","logUnits")])
+plot(df[-1],col=factor(df$Borough))
+legend("bottomright",legend=levels(factor(df$Borough)),fill= unique(factor(df$Borough)))
+```
+
+##v.  Consider the following block of code.  Give a single line of R code which gives the samefinal answer as the block of code.  There are a few ways to do this.
+```{r}
+median(housing[housing$Borough=="Manhattan","Value"],na.rm=T)
+```
+
+##vi.  Make side-by-side box plots comparing propertylogValueacross the five boroughs.
+```{r}
+boxplot(housing$logValue~housing$Borough)
+```
+
+##vii.  For five boroughs, what are the median property values? (UseValuehere, notlogValue.)
+```{r}
+aggregate(housing$Value,list(housing$Borough),median)
+```

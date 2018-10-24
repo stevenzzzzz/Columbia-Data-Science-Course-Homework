@@ -1,0 +1,90 @@
+---
+title: "GR5206 HW1 mz2692"
+author: "Steven"
+date: "9/14/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+#Problem 1
+##Part 1:Importing Data into R
+###i.
+```{r}
+#Import data into titanic dataframe
+file="//Users//zhongming//Downloads//Titanic.txt"
+titanic=read.table(file,header=T,as.is=T)
+titanic=as.data.frame(titanic)
+```
+
+###ii.
+```{r}
+#get the dimension of titanic
+dim(titanic)
+```
+Ans: It contains 891 rows and 12 columns.
+
+###iii.
+```{r}
+#Subsetting the titanic dataframe
+Survived.Word=titanic["Survived"]
+
+#convert dummy data into characters
+Survived.Word[Survived.Word==0]="died"
+Survived.Word[Survived.Word==1]="survived"
+```
+##Part 2:Exploring the Data in R
+
+###i.
+```{r}
+#using apply to get mean
+mean=sapply(subset(titanic,select=c(Survived,Age,Fare)),mean)
+mean
+```
+Ans: The mean of Survived tells us the propotion of people survived. The Age mean value is NA because the titanic["Age"] is a list and it contains NA.
+
+###ii.
+```{r}
+#subset and get the data that are female and survived.
+d2=subset(titanic,Survived==1,Sex=="female")
+
+#calculate the proportion of survived female in total dataset
+female_survived1=round(nrow(d2)/nrow(titanic),digits = 2)
+female_survived1
+```
+
+###iii.
+```{r}
+#subset and get data that are survived.
+d3=subset(titanic,Survived==1,select=Sex)
+
+#calculate the propotion of survived feamle in total survived people
+female_survived2=round(length(d3[d3=="female"])/length(d3[,]),digits=2)
+female_survived2
+```
+
+###iv.
+```{r}
+#calculate the different survival rate of 3 classes
+classes <- sort(unique(titanic$Pclass))
+Pclass.Survival <- vector("numeric", length = 3)
+names(Pclass.Survival) <- classes
+for (i in 1:3) {
+  Pclass.Survival[i]=round(colMeans(subset(titanic,Pclass==i,select=Survived)),digits = 2)
+}
+Pclass.Survival
+```
+
+###v.
+```{r}
+#using tapply to get the same result as question iv.
+Pclass.Survival2=round(tapply(titanic[["Survived"]],titanic[["Pclass"]],mean),digits = 2)
+Pclass.Survival2==Pclass.Survival
+```
+
+###vi.
+```{r}
+plot(Pclass.Survival)
+cor.test(classes,Pclass.Survival[1:3])
+```
+Ans: According to the correlation test, there seems to be a relationship between survival rate and classes.
+
